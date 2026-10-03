@@ -15,7 +15,7 @@ cd adk-lab
 uv sync --python 3.11 --locked
 ```
 
-取得済みの場合は `cd adk-lab` で移動し、`uv sync --python 3.11 --locked` を実行します。
+取得済みの場合はリポジトリのルートで`uv sync --python 3.11 --locked` を実行します。
 
 ## Usage
 
