@@ -1,0 +1,13 @@
+[project]
+name = "adk-lab"
+version = "0.1.0"
+description = "Self-contained experiments for Google ADK behavior and boundary conditions"
+requires-python = ">=3.11"
+dependencies = [
+    "google-adk==2.11.0",
+    "litellm==1.103.2",
+    "pydantic==2.13.5",
+]
+
+[tool.uv]
+package = false
