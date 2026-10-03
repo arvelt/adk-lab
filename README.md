@@ -1,63 +1,60 @@
 # adk-lab
 
-Google ADKの仕様確認・境界条件検証に特化した実験スクリプト集です。
-公式サンプル集は別にあるため、その複製は目的にしません。
-1つの疑問を1つのPythonファイルで検証し、モデル・Agent・tools・schema・実行処理を各ファイルに直接記述します。共通化せず、重複を許容します。
+Google ADKの仕様確認・境界条件検証に特化した、1ファイル完結の実験スクリプト集です。
+公式サンプル集の複製は目的にしません。モデル・Agent・tools・schemaは各ファイルに直接記述し、共通化せず重複を許容します。
 
-## 実験索引
+## Installation
 
-2026-10-03、以下の3本を実行しました。
+前提：Git、uv、`http://localhost:11434` で稼働中のOllama、導入済みの `qwen3:8b`。APIキーは不要です。
 
-| ファイル | Question | Observed behavior |
-| --- | --- | --- |
-| [basic_agent.py](experiments/basic_agent.py) | 最小AgentでローカルLLMへテキスト入力できるか | 成功。入力「2 + 3」に最終テキスト `5`。 |
-| [output_schema.py](experiments/output_schema.py) | `output_schema` は何を返すか | 成功。最終テキストは `{"city":"Tokyo","country":"Japan"}` 相当のJSON文字列。Pydantic検証に通り、`output_key` によりセッションに同じ値の辞書を保存。 |
-| [output_schema_with_tools.py](experiments/output_schema_with_tools.py) | 同一Agentにtoolsとoutput_schemaを指定できるか | 成功。`get_reading("sample_01")` が実際に1回実行され、`set_model_response` 経由で `{"sample_id":"sample_01","reading":731}` を返し、セッションにも辞書を保存。 |
-
-## 最短手順
-
-前提：`git`、`uv`、稼働中のOllama、およびOllamaに `qwen3:8b` が必要です。APIキーは不要です。
+初回はリポジトリを取得し、依存関係を準備します。
 
 ```sh
 git clone git@github.com:arvelt/adk-lab.git
 cd adk-lab
 uv sync --python 3.11 --locked
+```
+
+取得済みの場合は `cd adk-lab` で移動し、`uv sync --python 3.11 --locked` を実行します。
+
+## Usage
+
+リポジトリのルートで、モデルの存在とtools対応を確認します。
+
+```sh
+ollama list
+ollama show qwen3:8b
+```
+
+`ollama list` に `qwen3:8b`、`ollama show` のCapabilitiesに `tools` があることを確認し、実験を実行します。
+
+```sh
 uv run experiments/basic_agent.py
 uv run experiments/output_schema.py
 uv run experiments/output_schema_with_tools.py
 ```
 
-各スクリプトが `OLLAMA_API_BASE=http://localhost:11434` を設定し、
-`LiteLlm(model="ollama_chat/qwen3:8b", api_base=...)` で接続します。
-`.env.example` は説明用で、スクリプトは.envを読み込みません。
-モデル・接続先を変更する場合は、それぞれのファイル内の定数を編集してください。
+各スクリプトは環境情報と応答を表示します。検証を通過すると `RESULT: PASS` を表示し、終了コード0で終了します。
+失敗時は例外を表示し、非ゼロで終了します。全体180秒、モデル呼び出し120秒、最大6回の上限があります。
 
-## 検証環境と仕様の切り分け
+## Experiments
 
-- Python 3.11.17 / google-adk 2.11.0 / LiteLLM 1.103.2 / Pydantic 2.13.5 / uv 0.12.22。
-- Ollama APIのversionは0.35.1。モデルは `qwen3:8b`（8.2B、Q4_K_M）。
-  `ollama list` で存在を確認し、`ollama show qwen3:8b` でtools対応を確認しました。
-- モデルへのプロンプトには `/no_think` を付け、Agentのtemperatureを0にしました。
-- 3本とも `RESULT: PASS`、終了コード0でした。失敗時は例外を隠さず非ゼロ終了します。
-  各実験には全体180秒、モデル呼び出し120秒、最大6回の上限を設けています。
-- 併用実験で `LiteLlm.capabilities.output_schema_and_tools` は `False` でした。
-  ただしこれはAgent設定の禁止を意味しません。インストール済みADKの
-  `flows/llm_flows/basic.py` と `flows/llm_flows/prompt/_schema.py` を確認すると、
-  ネイティブ併用ができない経路ではADKが `set_model_response` を追加します。
-  実行時にも両リクエストのtoolsは `["set_model_response","get_reading"]`、
-  ネイティブresponse_schemaは未設定でした。
-- イベントは `get_reading` 呼び出し → ツール結果731 →
-  `set_model_response` 呼び出し → 最終JSON、の順でした。
-  返されたJSONだけでなく、Python関数内の記録で実際のツール実行も検証しています。
-- 併用実験では `JSON_SCHEMA_FOR_FUNC_DECL` のEXPERIMENTAL警告が出ましたが、
-  エラーは発生しませんでした。過去に遭遇した制約について、その当時のバージョン・条件は未確認です。
-  今回の成功を他のモデル・バージョンの保証にはしません。
-- 外部の私有データは使用せず、ツールの731はスクリプト内で定義した架空の測定値です。
-  Gemini等への切替やAPIキーの設定は、今回の検証では必要ありませんでした。
+| スクリプト | 確認する内容 |
+| --- | --- |
+| [basic_agent.py](experiments/basic_agent.py) | 最小Agentのテキスト入力・応答 |
+| [output_schema.py](experiments/output_schema.py) | 構造化出力とセッションへの保存 |
+| [output_schema_with_tools.py](experiments/output_schema_with_tools.py) | 同一Agentでのtoolsとoutput_schemaの併用 |
 
-確認に使用した公式情報：
-[ADKのOllama接続](https://adk.dev/agents/models/ollama/)、
-[ADK LlmAgent実装](https://github.com/google/adk-python/blob/main/src/google/adk/agents/llm_agent.py)、
-[LiteLlm実装](https://github.com/google/adk-python/blob/main/src/google/adk/models/lite_llm.py)、
-[構造化出力の補助ツール経路](https://github.com/google/adk-python/blob/main/src/google/adk/flows/llm_flows/prompt/_schema.py)。
-GitHubのmainは更新されるため、上記実行結果はlockファイルのバージョンを基準にしてください。
+## Configuration
+
+モデル名と接続先は各スクリプト内の `MODEL` と `API_BASE` で指定します。
+接続には `LiteLlm` の `ollama_chat` を使い、各スクリプトが `OLLAMA_API_BASE` を設定します。
+モデルや接続先を変える場合は、実行するファイル内の定数を編集してください。
+
+`.env.example` は説明用です。スクリプトは.envを読み込まず、環境変数の事前設定も不要です。
+
+## Reports
+
+実行結果・検証環境・仕様の切り分けは `docs/` に保存します。
+
+- [最初の3実験（2026-10-03）](docs/2026-10-03-initial-experiments.md)
