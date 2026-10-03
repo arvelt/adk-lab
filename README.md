@@ -15,7 +15,7 @@ cd adk-lab
 uv sync --python 3.11 --locked
 ```
 
-取得済みの場合はリポジトリのルートで`uv sync --python 3.11 --locked` を実行します。
+取得済みの場合はリポジトリのルートで `uv sync --python 3.11 --locked` を実行します。
 
 ## Usage
 
@@ -37,14 +37,6 @@ uv run experiments/output_schema_with_tools.py
 各スクリプトは環境情報と応答を表示します。検証を通過すると `RESULT: PASS` を表示し、終了コード0で終了します。
 失敗時は例外を表示し、非ゼロで終了します。全体180秒、モデル呼び出し120秒、最大6回の上限があります。
 
-## Experiments
-
-| スクリプト | 確認する内容 |
-| --- | --- |
-| [basic_agent.py](experiments/basic_agent.py) | 最小Agentのテキスト入力・応答 |
-| [output_schema.py](experiments/output_schema.py) | 構造化出力とセッションへの保存 |
-| [output_schema_with_tools.py](experiments/output_schema_with_tools.py) | 同一Agentでのtoolsとoutput_schemaの併用 |
-
 ## Configuration
 
 モデル名と接続先は各スクリプト内の `MODEL` と `API_BASE` で指定します。
@@ -55,6 +47,4 @@ uv run experiments/output_schema_with_tools.py
 
 ## Reports
 
-実行結果・検証環境・仕様の切り分けは `docs/` に保存します。
-
-- [最初の3実験（2026-10-03）](docs/2026-10-03-initial-experiments.md)
+[実験一覧](docs/README.md)から、各実験の詳細レポートを参照できます。
